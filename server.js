@@ -1,23 +1,36 @@
 const express = require('express');
+const cors = require('cors'); // Import the cors package
 const connectDB = require('./config/db');
-const blogRoutes = require('./routes/blogs');
+const eventsRoutes = require('./routes/events');
 const userRoutes = require('./routes/users');
-const auth = require('./middleware/auth');
 
 require('dotenv').config();
 
 const app = express();
-//db connect
+
+// Connect to the database
 connectDB();
+
+// Use CORS middleware
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Accept',
+        'X-Requested-With',
+        'X-Auth-Token'
+    ]
+}));
 
 app.use(express.json());
 
-app.use('/api', userRoutes); // User routes
-app.use('/api', blogRoutes); // Blog routes
+// User routes
+app.use('/api', userRoutes);
 
-// Apply authentication middleware to routes that require login
-app.post('/api/blogs/:id/replies', auth, (req, res) => {
-});
+// Events routes
+app.use('/api', eventsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const BlogSchema = new mongoose.Schema({
+const EventSchema = new mongoose.Schema({
     image_url: String,
     video_url: String,
     title: String,
@@ -27,6 +27,6 @@ const BlogSchema = new mongoose.Schema({
     }],
 }, { timestamps: true });
 
-const Blog = mongoose.model('Blog', BlogSchema);
+const Event = mongoose.model('Event', EventSchema);
 
-module.exports = Blog;
+module.exports = Event;

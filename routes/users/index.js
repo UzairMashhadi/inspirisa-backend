@@ -1,5 +1,5 @@
 const express = require('express');
-const User = require('../models/user');
+const User = require('../../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
@@ -30,12 +30,10 @@ router.post('/login', async (req, res) => {
   try {
     // Find user by email
     const user = await User.findOne({ email });
-    console.log('user', user)
     if (!user) return res.status(400).json({ error: 'Invalid credentials' });
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('isMatch', isMatch)
     if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
     // Generate token
