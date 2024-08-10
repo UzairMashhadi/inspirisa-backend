@@ -13,7 +13,7 @@
       }
     ],
     "env": {
-      "JWT_SECRET": "your_jwt_secret"
+      "JWT_SECRET": "rRvbGTho+E30u2hADycdIwTbHBdvkOSb97Ke54mImz0="
     }
   }
   
