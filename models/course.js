@@ -1,9 +1,14 @@
 const mongoose = require('mongoose');
 
+const documentSchema = new mongoose.Schema({
+    url: { type: String, required: true },
+}, { timestamps: true });
+
 const topicSchema = new mongoose.Schema({
     topic_title: { type: String, required: true },
     topic_length: { type: Number },
-    topic_video_url: { type: String }
+    topic_video_url: { type: String },
+    topic_documents: [documentSchema]
 }, { timestamps: true });
 
 const lessonSchema = new mongoose.Schema({
@@ -19,7 +24,8 @@ const courseSchema = new mongoose.Schema({
     course_total_length: { type: String },
     courses_image: [{ type: String }],
     course_short_description: { type: String },
-    lessons: [lessonSchema]
+    lessons: [lessonSchema],
+    is_course_paid: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Course', courseSchema);
