@@ -27,4 +27,12 @@ const formatAllCourse = (course) => ({
     is_course_paid: course.is_course_paid
 });
 
-module.exports = { formatCourse, formatAllCourse };
+const responseFormatter = (res, status, data = {}, message) => {
+    return res.status(status).json({
+        status,
+        data: data,
+        message
+    });
+};
+
+module.exports = { formatCourse, formatAllCourse, responseFormatter };
