@@ -7,8 +7,7 @@ const globalErrorHandler = (err, req, res, next) => {
     const statusCode = err.statusCode || STATUS_CODE.INTERNAL_SERVER_ERROR;
     const message = err.message || ERRORS.internalServerError;
 
-    responseFormatter(res, statusCode, {}, message);
-    next();
+    return responseFormatter(res, statusCode, {}, message);
 };
 
 module.exports = globalErrorHandler;
