@@ -1,51 +1,15 @@
 const express = require('express');
-const Course = require('../../models/course');
-const { formatCourse, formatAllCourse } = require('../../utils/helper');
+const CoursesController = require('../../controllers/courses');
+const isAdmin = require('../../middleware/isAdmin');
 const router = express.Router();
 
 // Get all courses
-router.get('/courses', async (req, res) => {
-    try {
-        const courses = await Course.find();
-        res.json(courses.map(formatAllCourse));
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+router.get('/courses', CoursesController.getAllCourses);
 
 // Get a single course by ID
-router.get('/course/:id', async (req, res) => {
-    try {
-        const course = await Course.findById(req.params.id);
-        if (!course) return res.status(404).json({ error: 'Course not found' });
-        res.json(formatCourse(course));
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+router.get('/course/:id', CoursesController.getSingleCourseById);
 
 // Post a new course
-router.post('/course', async (req, res) => {
-    const { category, course_title, course_price, course_intro_video_url, course_total_length, courses_image, course_short_description, lessons, is_course_paid } = req.body;
-
-    try {
-        const course = new Course({
-            category,
-            course_title,
-            course_price,
-            course_intro_video_url,
-            course_total_length,
-            courses_image,
-            course_short_description,
-            lessons,
-            is_course_paid
-        });
-
-        await course.save();
-        res.status(201).json(formatCourse(course));
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+router.post('/course', isAdmin, CoursesController.postCourse);
 
 module.exports = router;

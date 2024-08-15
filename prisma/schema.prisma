@@ -1,0 +1,136 @@
+// primsa
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+model User {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName          String
+  email             String   @unique
+  password          String
+  isEmailVerified   Boolean  @default(false)
+  verificationToken String?  @unique
+  role              UserRole @default(CLIENT)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  Reply Reply[]
+
+  UserCourse UserCourse[]
+  ContactUs  ContactUs[]
+}
+
+model Course {
+  id                       String   @id @default(auto()) @map("_id") @db.ObjectId
+  category                 String
+  course_title             String
+  course_price             Float
+  course_intro_video_url   String
+  course_total_length      String?
+  course_images            String[]
+  course_short_description String
+  lessons                  Lesson[]
+  is_course_paid           Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  UserCourse UserCourse[]
+}
+
+model UserCourse {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  courseId    String   @db.ObjectId
+  purchasedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  course      Course   @relation(fields: [courseId], references: [id])
+  eventId     String   @db.ObjectId
+}
+
+model Lesson {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  courseId     String @db.ObjectId
+  lesson_title String
+  course       Course @relation(fields: [courseId], references: [id])
+
+  topics Topic[]
+}
+
+model Topic {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  lessonId        String @db.ObjectId
+  topic_title     String
+  topic_length    Int?
+  topic_video_url String
+  lesson          Lesson @relation(fields: [lessonId], references: [id])
+
+  topic_documents Document[]
+}
+
+model Document {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  topicId String @db.ObjectId
+  url     String
+  topic   Topic  @relation(fields: [topicId], references: [id])
+}
+
+model Event {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  title            String
+  description      String
+  image_url        String
+  video_url        String?
+  tags             String[]
+  images_url_array String[]
+  event_start_date String
+  start_time       String
+  event_end_date   String
+  end_time         String
+  organizerId      String   @db.ObjectId
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organizer Organizer? @relation(fields: [organizerId], references: [id])
+  replies   Reply[]
+}
+
+model Organizer {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String  @unique
+  website_url String
+  event       Event[]
+}
+
+model Reply {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  eventId     String   @db.ObjectId
+  comment     String
+  website_url String?
+  event       Event    @relation(fields: [eventId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model ContactUs {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String?  @db.ObjectId
+  firstName         String
+  lastName          String
+  email             String
+  contactNumber     BigInt
+  questionOrRequest String
+  user              User?    @relation(fields: [userId], references: [id])
+  createdAt         DateTime @default(now())
+}
