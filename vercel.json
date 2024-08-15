@@ -1,19 +1,31 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "server.js",
-        "use": "@vercel/node"
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "prisma/schema.prisma"
+        ]
       }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/server.js"
-      }
-    ],
-    "env": {
-      "JWT_SECRET": "rRvbGTho+E30u2hADycdIwTbHBdvkOSb97Ke54mImz0="
     }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "JWT_SECRET": "rRvbGTho+E30u2hADycdIwTbHBdvkOSb97Ke54mImz0="
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    },
+    "commands": [
+      "npx prisma generate"
+    ]
   }
-  
+}
