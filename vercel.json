@@ -19,10 +19,5 @@
   ],
   "env": {
     "JWT_SECRET": "rRvbGTho+E30u2hADycdIwTbHBdvkOSb97Ke54mImz0="
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
   }
 }
