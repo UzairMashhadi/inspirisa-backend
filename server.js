@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
-const errorHandler = require('./utils/errorHandler');
+const globalErrorHandler = require('./utils/errorHandler');
 const eventsRoutes = require('./routes/events');
 const usersRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
@@ -37,7 +37,7 @@ app.use('/api', authMiddleware, coursesRoutes);
 app.use('/api', publicRoutes);
 
 // Error handler (last middleware)
-app.use(errorHandler);
+app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

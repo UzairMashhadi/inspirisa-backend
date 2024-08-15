@@ -8,6 +8,7 @@ const globalErrorHandler = (err, req, res, next) => {
     const message = err.message || ERRORS.internalServerError;
 
     responseFormatter(res, statusCode, {}, message);
+    next();
 };
 
 module.exports = globalErrorHandler;
