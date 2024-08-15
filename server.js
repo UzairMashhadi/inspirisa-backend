@@ -21,8 +21,6 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use(errorHandler);
-
 // Auth routes
 app.use('/api', authRoutes);
 
@@ -37,6 +35,9 @@ app.use('/api', authMiddleware, coursesRoutes);
 
 // Public
 app.use('/api', publicRoutes);
+
+// Error handler (last middleware)
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
