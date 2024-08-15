@@ -23,9 +23,6 @@
   "build": {
     "env": {
       "NODE_ENV": "production"
-    },
-    "commands": [
-      "npx prisma generate"
-    ]
+    }
   }
 }
