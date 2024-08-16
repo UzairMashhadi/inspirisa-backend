@@ -7,7 +7,7 @@ const coursesRoutes = require('./routes/courses');
 const publicRoutes = require('./routes');
 const authMiddleware = require('./middleware/auth/authMiddleware');
 const CustomError = require("./utils/CustomError");
-const globalErrorHandler = require("./utils/errorHandler");
+const globalErrorHandler = require("./controllers/error/errorController");
 
 const app = express();
 app.use(cors());
