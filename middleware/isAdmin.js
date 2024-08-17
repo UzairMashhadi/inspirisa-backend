@@ -8,7 +8,7 @@ const isAdmin = async (req, res, next) => {
     try {
         const email = req?.user?.email;
         if (!email) {
-            return responseFormatter(res, STATUS_CODE.BAD_REQUEST, {}, TEXTS.someThingWentWrong);
+            return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.unAuthorized);
         }
 
         const user = await prisma.user.findUnique({ where: { email } });
@@ -23,7 +23,7 @@ const isAdmin = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Error in isAdmin middleware:', error);
-        responseFormatter(res, STATUS_CODE.INTERNAL_SERVER_ERROR, {}, TEXTS.internalServerError);
+        next(error);
     }
 };
 

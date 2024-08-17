@@ -14,6 +14,12 @@ router.get('/event/:id', EventsController.getSingleEventById);
 // Create a new event
 router.post('/event', isAdmin, EventsController.postEvent);
 
+// Update a event
+router.patch('/event/:id', isAdmin, EventsController.updateEvent);
+
+// Delete a event
+router.delete('/event/:id', isAdmin, EventsController.deleteEvent);
+
 // Add a reply to an event
 router.post('/event-comment/:id', auth, EventsController.commentOnEvent);
 
