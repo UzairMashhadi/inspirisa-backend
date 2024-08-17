@@ -78,8 +78,8 @@ class EventsController {
             }
 
             responseFormatter(res, STATUS_CODE.SUCCESS, { event }, TEXTS.recordFetched);
-        } catch (err) {
-            next(err);
+        } catch (error) {
+            next(error);
         }
     }
 
@@ -129,8 +129,88 @@ class EventsController {
             });
 
             responseFormatter(res, STATUS_CODE.CREATED, { event }, TEXTS.recordCreated);
-        } catch (err) {
-            responseFormatter(res, STATUS_CODE.INTERNAL_SERVER_ERROR, {}, err.message);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updateEvent(req, res, next) {
+        const { id } = req?.params;
+        const {
+            image_url,
+            video_url,
+            title,
+            description,
+            tags,
+            event_start_date,
+            start_time,
+            event_end_date,
+            end_time,
+            images_url_array,
+            website_url,
+        } = req.body;
+
+        try {
+            const event = await prisma.event.update({
+                where: { id },
+                data: {
+                    image_url,
+                    video_url,
+                    title,
+                    description,
+                    tags,
+                    event_start_date,
+                    start_time,
+                    event_end_date,
+                    end_time,
+                    images_url_array: images_url_array || [],
+                    organizer: { update: { website_url } },
+                },
+            });
+
+            if (!event) {
+                return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
+            }
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, { event }, TEXTS.recordUpdated);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deleteEvent(req, res, next) {
+        const { id } = req?.params;
+
+        try {
+            const event = await prisma.event.findUnique({
+                where: { id },
+                include: {
+                    organizer: true,
+                    replies: true
+                }
+            });
+
+            if (!event) {
+                return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
+            }
+
+            await prisma.$transaction(async (prisma) => {
+                await prisma.reply.deleteMany({
+                    where: { id: { in: event.replies.map(reply => reply.id) } }
+                });
+
+                await prisma.event.delete({
+                    where: { id }
+                });
+
+                await prisma.organizer.delete({
+                    where: { id: event.organizer.id }
+                });
+            });
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.recordDeleted);
+        } catch (error) {
+            next(error);
         }
     }
 
@@ -180,8 +260,8 @@ class EventsController {
             });
 
             responseFormatter(res, STATUS_CODE.SUCCESS, { event: updatedEvent }, TEXTS.recordCreated);
-        } catch (err) {
-            responseFormatter(res, STATUS_CODE.INTERNAL_SERVER_ERROR, {}, err.message);
+        } catch (error) {
+            next(error);
         }
     }
 }

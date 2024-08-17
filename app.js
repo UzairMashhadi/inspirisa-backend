@@ -12,7 +12,10 @@ const globalErrorHandler = require("./utils/errorHandler");
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+var bodyParser = require('body-parser')
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
 // Auth routes
 app.use('/api', authRoutes);
@@ -41,7 +44,7 @@ app.all("*", (req, res, next) => {
     next(err);
 });
 
-app.use(globalErrorHandler);
 // Error handler (last middleware)
+app.use(globalErrorHandler);
 
 module.exports = app;

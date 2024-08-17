@@ -83,7 +83,8 @@ class AuthController {
     async loginUser(req, res, next) {
         try {
             const { email, password } = req.body;
-            let user = await prisma.user.findUnique({ where: { email } });
+            const user = await prisma.user.findUnique({ where: { email } });
+
             if (!user) {
                 return responseFormatter(res, STATUS_CODE.CONFLICT, {}, ERRORS.userNotExists);
             }
@@ -94,9 +95,54 @@ class AuthController {
             }
 
             const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
-            delete user.password;
-            delete user.verificationToken;
-            responseFormatter(res, STATUS_CODE.SUCCESS, { ...user, token }, TEXTS.userLogin);
+            let loggedInuser = await prisma.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    token,
+                },
+            });
+
+            delete loggedInuser.password;
+            delete loggedInuser.verificationToken;
+            responseFormatter(res, STATUS_CODE.SUCCESS, { user: loggedInuser }, TEXTS.userLogin);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async logoutUser(req, res, next) {
+        try {
+            let token = req.headers.authorization || req.cookies.token;
+
+            if (!token) {
+                return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.tokenInvalid);
+            }
+            if (token.startsWith('Bearer ')) {
+                token = token.slice(7, token.length);
+            }
+            const user = await prisma.user.findUnique({
+                where: {
+                    token,
+                },
+            });
+
+            if (!user) {
+                return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.userNotExists);
+            }
+
+            await prisma.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    token: null,
+                },
+            });
+            res.clearCookie('token');
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.userLogout);
         } catch (err) {
             next(err);
         }

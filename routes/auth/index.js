@@ -12,4 +12,7 @@ router.get('/verify-email', AuthController.verifyEmail);
 // Login user
 router.post('/login', isEmailVerified, AuthController.loginUser);
 
+// Logout user
+router.get('/logout', AuthController.logoutUser);
+
 module.exports = router;

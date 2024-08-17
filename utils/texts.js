@@ -39,6 +39,7 @@ module.exports = {
   TEXTS: {
     userCreated: "User created successfully",
     userLogin: "User login successfully",
+    userLogout: "User logged out successfully",
     userLoggedOut: "User logout successfully",
     userUpdated: "User updated successfully",
     passwordUpdated: "Password updated successfully",
@@ -61,6 +62,8 @@ module.exports = {
     recordFetched: "Record fetched successfully",
     recordNotFound: "Record not found",
     recordCreated: "Record created successfully",
+    recordUpdated: "Record updated successfully",
+    recordDeleted: "Record deleted successfully",
     someThingWentWrong: "Something went wrong!",
     emailNotVerified: "Please verify your email to login",
     userNotFound: "User not found!",
