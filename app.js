@@ -1,24 +1,30 @@
 const express = require('express');
 const cors = require('cors');
+const Stripe = require('stripe');
 const eventsRoutes = require('./routes/events');
 const usersRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const coursesRoutes = require('./routes/courses');
 const publicRoutes = require('./routes');
+const stripeRoutes = require('./routes/stripe');
 const authMiddleware = require('./middleware/auth/authMiddleware');
 const CustomError = require("./utils/CustomError");
 const globalErrorHandler = require("./utils/errorHandler");
 
 const app = express();
+var bodyParser = require('body-parser')
+
 app.use(cors());
 app.use(express.json());
-var bodyParser = require('body-parser')
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 
 // Auth routes
 app.use('/api', authRoutes);
+
+// Stripe routes
+app.use('/api/stripe', stripeRoutes);
 
 // User routes
 app.use('/api', authMiddleware, usersRoutes);
