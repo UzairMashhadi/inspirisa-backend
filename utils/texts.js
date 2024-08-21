@@ -67,8 +67,9 @@ module.exports = {
     someThingWentWrong: "Something went wrong!",
     emailNotVerified: "Please verify your email to login",
     userNotFound: "User not found!",
-    organizerNotFound: "Organizer not found!"
-
+    organizerNotFound: "Organizer not found!",
+    paymentSavedSuccessfully: "payment saved successfully",
+    requiredFieldsMissing: "Required fields missing."
   },
 
   ROLES: {

@@ -16,12 +16,19 @@ class CoursesController {
 
     async getSingleCourseById(req, res, next) {
         try {
+            const courseId = req?.params?.id;
             const course = await prisma.course.findUnique({
-                where: { id: req?.params?.id },
+                where: { id: courseId },
                 include: {
                     UserCourse: {
                         include: {
-                            user: true,
+                            user: {
+                                select: {
+                                    id: true,
+                                    email: true,
+                                    fullName: true,
+                                }
+                            },
                         }
                     },
                     lessons: {
@@ -51,6 +58,7 @@ class CoursesController {
             const {
                 category,
                 course_title,
+                course_thumbnail_image,
                 course_price,
                 course_intro_video_url,
                 course_total_length,
@@ -64,6 +72,7 @@ class CoursesController {
                 data: {
                     category,
                     course_title,
+                    course_thumbnail_image,
                     course_price,
                     course_intro_video_url,
                     course_total_length,
@@ -109,11 +118,12 @@ class CoursesController {
 
     async updateCourse(req, res, next) {
         try {
-            const { id } = req?.params;
+            const { id } = req.params;
             const {
                 category,
                 course_title,
                 course_price,
+                course_thumbnail_image,
                 course_intro_video_url,
                 course_total_length,
                 course_images,
@@ -122,54 +132,67 @@ class CoursesController {
                 is_course_paid,
             } = req.body;
 
+            // Update the course
             const course = await prisma.course.update({
                 where: { id },
                 data: {
                     category,
                     course_title,
+                    course_thumbnail_image,
                     course_price,
                     course_intro_video_url,
                     course_total_length,
                     course_images,
                     course_short_description,
                     is_course_paid,
-                    lessons: {
-                        update: lessons.filter(lesson => lesson.id).map(lesson => ({
-                            where: { id: lesson.id },
-                            data: {
-                                lesson_title: lesson.lesson_title,
-                                topics: {
-                                    update: lesson.topics.filter(topic => topic.id).map(topic => ({
-                                        where: { id: topic.id },
-                                        data: {
-                                            topic_title: topic.topic_title,
-                                            topic_length: topic.topic_length,
-                                            topic_video_url: topic.topic_video_url,
-                                            topic_documents: {
-                                                update: topic.topic_documents.filter(doc => doc.id).map(doc => ({
-                                                    where: { id: doc.id },
-                                                    data: { url: doc.url },
-                                                })),
-                                            },
-                                        },
-                                    })),
-                                },
-                            },
-                        })),
-                    },
-                },
-                include: {
-                    lessons: {
-                        include: {
-                            topics: {
-                                include: {
-                                    topic_documents: true,
-                                },
-                            },
-                        },
-                    },
                 },
             });
+
+            // Array to store update operations
+            const updates = [];
+
+            // Update each lesson
+            for (const lesson of lessons) {
+                updates.push(
+                    prisma.lesson.update({
+                        where: { id: lesson.id },
+                        data: {
+                            lesson_title: lesson.lesson_title,
+                        },
+                    })
+                );
+
+                for (const topic of lesson.topics) {
+                    updates.push(
+                        prisma.topic.update({
+                            where: { id: topic.id },
+                            data: {
+                                topic_title: topic.topic_title,
+                                topic_length: topic.topic_length,
+                                topic_video_url: topic.topic_video_url,
+                            },
+                        })
+                    );
+
+                    for (const document of topic.topic_documents) {
+                        if (document.id) {
+                            updates.push(
+                                prisma.document.update({
+                                    where: { id: document.id },
+                                    data: {
+                                        url: document.url,
+                                    },
+                                })
+                            );
+                        } else {
+                            responseFormatter(res, STATUS_CODE.BAD_REQUEST, {}, TEXTS.someThingWentWrong);
+                        }
+                    }
+                }
+            }
+
+            // Execute all updates in a transaction
+            await prisma.$transaction(updates);
 
             responseFormatter(res, STATUS_CODE.SUCCESS, { course }, TEXTS.recordUpdated);
         } catch (error) {

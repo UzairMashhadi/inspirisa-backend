@@ -27,14 +27,17 @@ model User {
 
   Reply Reply[]
 
-  UserCourse UserCourse[]
-  ContactUs  ContactUs[]
+  UserCourse     UserCourse[]
+  ContactUs      ContactUs[]
+  UserCards      UserCard[]
+  PaymentHistory PaymentHistory[]
 }
 
 model Course {
   id                       String   @id @default(auto()) @map("_id") @db.ObjectId
   category                 String
   course_title             String
+  course_thumbnail_image   String
   course_price             String?
   course_intro_video_url   String
   course_total_length      String?
@@ -55,7 +58,6 @@ model UserCourse {
   purchasedAt DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id])
   course      Course   @relation(fields: [courseId], references: [id])
-  eventId     String   @db.ObjectId
 }
 
 model Lesson {
@@ -134,4 +136,28 @@ model ContactUs {
   questionOrRequest String
   user              User?    @relation(fields: [userId], references: [id])
   createdAt         DateTime @default(now())
+}
+
+model UserCard {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @db.ObjectId
+  stripeCustomerId String
+  stripeCardId     String
+  cardBrand        String
+  last4            String
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model PaymentHistory {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String   @db.ObjectId
+  courseId              String   @db.ObjectId
+  amount                Int
+  currency              String
+  stripePaymentIntentId String
+  createdAt             DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

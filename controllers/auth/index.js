@@ -95,18 +95,30 @@ class AuthController {
             }
 
             const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
-            let loggedInuser = await prisma.user.update({
+            const updatedUser = await prisma.user.update({
                 where: {
                     id: user.id,
                 },
                 data: {
                     token,
                 },
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    isEmailVerified: true,
+                    role: true,
+                    // Reply: true,
+                    UserCourse: true,
+                    // ContactUs: true,
+                    // UserCards: true,
+                    PaymentHistory: true,
+                    updatedAt: true,
+                    createdAt: true
+                },
             });
 
-            delete loggedInuser.password;
-            delete loggedInuser.verificationToken;
-            responseFormatter(res, STATUS_CODE.SUCCESS, { user: loggedInuser }, TEXTS.userLogin);
+            responseFormatter(res, STATUS_CODE.SUCCESS, { user: updatedUser }, TEXTS.userLogin);
         } catch (err) {
             next(err);
         }
