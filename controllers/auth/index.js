@@ -106,6 +106,7 @@ class AuthController {
                     id: true,
                     fullName: true,
                     email: true,
+                    token: true,
                     isEmailVerified: true,
                     role: true,
                     // Reply: true,
@@ -114,7 +115,7 @@ class AuthController {
                     // UserCards: true,
                     PaymentHistory: true,
                     updatedAt: true,
-                    createdAt: true
+                    createdAt: true,
                 },
             });
 
