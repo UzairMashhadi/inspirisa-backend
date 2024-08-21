@@ -66,7 +66,6 @@ const attachPaymentMethod = async (customerId, paymentMethodId) => {
 
 const savePaymentHistory = async (res, amount, currency, courseId, userId, paymentIntentId) => {
     try {
-        const purchasedAt = new Date();
         await prisma.userCourse.create({
             data: {
                 courseId,
