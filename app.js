@@ -9,7 +9,7 @@ const publicRoutes = require('./routes');
 const stripeRoutes = require('./routes/stripe');
 const authMiddleware = require('./middleware/auth/authMiddleware');
 const CustomError = require("./utils/CustomError");
-const globalErrorHandler = require("./utils/errorHandler");
+const globalErrorHandler = require("./controllers/error/errorController");
 
 const app = express();
 var bodyParser = require('body-parser')
