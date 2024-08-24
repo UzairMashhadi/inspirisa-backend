@@ -1,6 +1,7 @@
 const express = require('express');
 const CoursesController = require('../../controllers/courses');
 const isAdmin = require('../../middleware/isAdmin');
+const auth = require('../../middleware/auth/auth');
 const router = express.Router();
 
 // Get all courses
@@ -10,12 +11,12 @@ router.get('/courses', CoursesController.getAllCourses);
 router.get('/course/:id', CoursesController.getSingleCourseById);
 
 // Post a new course
-router.post('/course', isAdmin, CoursesController.postCourse);
+router.post('/course', auth, isAdmin, CoursesController.postCourse);
 
 // Update a course
-router.patch('/course/:id', isAdmin, CoursesController.updateCourse);
+router.patch('/course/:id', auth, isAdmin, CoursesController.updateCourse);
 
 // Delete a course
-router.delete('/course/:id', isAdmin, CoursesController.deleteCourse);
+router.delete('/course/:id', auth, isAdmin, CoursesController.deleteCourse);
 
 module.exports = router;

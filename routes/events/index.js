@@ -12,13 +12,13 @@ router.get('/events', EventsController.getAllEvents);
 router.get('/event/:id', EventsController.getSingleEventById);
 
 // Create a new event
-router.post('/event', isAdmin, EventsController.postEvent);
+router.post('/event', auth, isAdmin, EventsController.postEvent);
 
 // Update a event
-router.patch('/event/:id', isAdmin, EventsController.updateEvent);
+router.patch('/event/:id', auth, isAdmin, EventsController.updateEvent);
 
 // Delete a event
-router.delete('/event/:id', isAdmin, EventsController.deleteEvent);
+router.delete('/event/:id', auth, isAdmin, EventsController.deleteEvent);
 
 // Add a reply to an event
 router.post('/event-comment/:id', auth, EventsController.commentOnEvent);
