@@ -1,4 +1,5 @@
 module.exports = {
+  AWS_MEDIA_URL: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`,
 
   STATUS_CODE: {
     NOT_FOUND: 404,
@@ -37,15 +38,15 @@ module.exports = {
   },
 
   TEXTS: {
-    userCreated: "User created successfully",
-    userLogin: "User login successfully",
-    userLogout: "User logged out successfully",
-    userLoggedOut: "User logout successfully",
-    userUpdated: "User updated successfully",
-    passwordUpdated: "Password updated successfully",
-    otpVerified: "OTP verified successfully",
+    userCreated: "User created successfully!",
+    userLogin: "User login successfully!",
+    userLogout: "User logged out successfully!",
+    userLoggedOut: "User logout successfully!",
+    userUpdated: "User updated successfully!",
+    passwordUpdated: "Password updated successfully!",
+    otpVerified: "OTP verified successfully!",
     passwordResetEmailSent: "Reset email sent!",
-    registerLinkSent: "Invite link sent successfully",
+    registerLinkSent: "Invite link sent successfully!",
     userAlreadyRegisteredWithEmail:
       "User is already registered with this email",
     inviteLinkEmailSubject: "WinRate Invite",
@@ -55,21 +56,30 @@ module.exports = {
     supportEmailSubject: "WinRate Support Email",
     contractEndateUpdated: "Contract End Date updated",
 
-    accountDeleted: "Account deleted successfully",
+    accountDeleted: "Account deleted successfully!",
 
     profileData: "Profile Data",
     profileUpdated: "Profile Updated",
-    recordFetched: "Record fetched successfully",
+    recordFetched: "Record fetched successfully!",
     recordNotFound: "Record not found",
-    recordCreated: "Record created successfully",
-    recordUpdated: "Record updated successfully",
-    recordDeleted: "Record deleted successfully",
+    recordCreated: "Record created successfully!",
+    recordUpdated: "Record updated successfully!",
+    recordDeleted: "Record deleted successfully!",
     someThingWentWrong: "Something went wrong!",
     emailNotVerified: "Please verify your email to login",
     userNotFound: "User not found!",
     organizerNotFound: "Organizer not found!",
-    paymentSavedSuccessfully: "payment saved successfully",
-    requiredFieldsMissing: "Required fields missing."
+    paymentSavedSuccessfully: "payment saved successfully!",
+    requiredFieldsMissing: "Required fields missing.",
+    fileUploaded: "File uploaded successfully!",
+    mediatypeReq: "type is required (image_url, images_url_array, video_url, doc)",
+    fileUploaded: "File uploaded successfully!",
+    fileDeleted: "File deleted successfully!",
+    fileUploadingFail: "File fail to upload!",
+    fileDeletionFail: "File fail to delete!",
+    fileDownloading: "File downloading failed",
+
+
   },
 
   ROLES: {

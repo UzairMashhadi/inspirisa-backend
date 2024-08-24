@@ -6,13 +6,16 @@ const usersRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const coursesRoutes = require('./routes/courses');
 const publicRoutes = require('./routes');
+const uploadRoutes = require('./routes/upload');
 const stripeRoutes = require('./routes/stripe');
 const authMiddleware = require('./middleware/auth/authMiddleware');
 const CustomError = require("./utils/CustomError");
 const globalErrorHandler = require("./controllers/error/errorController");
 
 const app = express();
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
+const isAdmin = require('./middleware/isAdmin');
+const auth = require('./middleware/auth/auth');
 
 app.use(cors());
 app.use(express.json());
@@ -23,8 +26,10 @@ app.use(bodyParser.urlencoded({
 // Auth routes
 app.use('/api', authRoutes);
 
+app.use("/api/media", auth, isAdmin, uploadRoutes);
+
 // Stripe routes
-app.use('/api/stripe', stripeRoutes);
+app.use('/api/stripe', auth, authMiddleware, stripeRoutes);
 
 // User routes
 app.use('/api', authMiddleware, usersRoutes);

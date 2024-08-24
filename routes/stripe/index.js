@@ -1,10 +1,7 @@
 const express = require('express');
-const buffer = require('micro').buffer;
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const router = express.Router();
-
 const {
-    createPaymentIntent,
     attachPaymentMethod,
     savePaymentHistory,
     getPaymentMethods,
@@ -14,8 +11,6 @@ const {
 } = require('../../services/stripe');
 const { responseFormatter } = require('../../utils/helper');
 const { TEXTS, STATUS_CODE } = require('../../utils/texts');
-
-const YOUR_DOMAIN = process.env.BASEURL;
 
 router.post('/create-payment-intent', async (req, res, next) => {
     try {
@@ -27,7 +22,6 @@ router.post('/create-payment-intent', async (req, res, next) => {
             payment_method_types: ['card'],
             metadata: { courseId, userId },
         });
-        console.log("paymentIntent", paymentIntent)
         res.status(200).json({ clientSecret: paymentIntent.client_secret });
     } catch (error) {
         next(error);
