@@ -9,8 +9,8 @@ class CoursesController {
         try {
             const courses = await prisma.course.findMany();
             responseFormatter(res, STATUS_CODE.SUCCESS, { courses }, TEXTS.recordFetched);
-        } catch (err) {
-            responseFormatter(res, STATUS_CODE.INTERNAL_SERVER_ERROR, {}, TEXTS.someThingWentWrong);
+        } catch (error) {
+            next(error);
         }
     }
 
