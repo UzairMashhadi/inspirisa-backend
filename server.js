@@ -1,15 +1,16 @@
 const http = require("http");
-const app = require("./app");
+const express = require("express");
 const connectDB = require('./config/db');
-
-const server = http.Server(app);
-
 require('dotenv').config();
+
+const app = express();
 
 const PORT = process.env.PORT || 5000;
 
 // Connect to the database
 connectDB();
+
+const server = http.createServer(app);
 
 const unexpectedErrorHandler = (error) => {
     console.log(error);
@@ -43,5 +44,4 @@ process.on("SIGTERM", () => {
     }
 });
 
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
