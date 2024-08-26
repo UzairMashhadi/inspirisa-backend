@@ -12,7 +12,8 @@ const handleFileUpload = async (file) => {
         const timestamp = Date.now();
         const fileKey = `${updatedOriginalName}_${file.fieldname}_${timestamp}.${fileExtension}`;
         const filePath = file?.path;
-
+        console.log('file', { file, updatedOriginalName, timestamp, fileKey, filePath })
+        // return
         await uploadFile(filePath, process.env.AWS_BUCKET_NAME, fileKey);
 
         fs.unlinkSync(filePath);
