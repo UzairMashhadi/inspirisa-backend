@@ -8,10 +8,9 @@ const router = express.Router();
 // Register user
 router.post('/upload', upload.single("file"), async (req, res, next) => {
     try {
-        let file = "";
-        const id = req?.body?.id
+        let file = {};
         if (req?.file) {
-            file = await handleFileUpload(req?.file, id);
+            file = await handleFileUpload(req?.file);
         }
         responseFormatter(res, STATUS_CODE.SUCCESS, { url: file }, TEXTS.fileUploaded);
     } catch (err) {
