@@ -4,6 +4,8 @@ const { STATUS_CODE, TEXTS } = require('../../utils/texts');
 
 const prisma = new PrismaClient();
 
+const defaultLanguage = 'ENGLISH';
+
 class CoursesController {
     async getAllCourses(req, res, next) {
         try {
@@ -63,6 +65,9 @@ class CoursesController {
                 course_intro_video_url,
                 course_total_length,
                 course_images,
+                benefitsAndAdvantages,
+                courseIncludes,
+                languages,
                 course_short_description,
                 lessons,
                 is_course_paid,
@@ -77,6 +82,9 @@ class CoursesController {
                     course_intro_video_url,
                     course_total_length,
                     course_images,
+                    benefitsAndAdvantages,
+                    courseIncludes,
+                    languages: languages?.length > 0 ? languages : [defaultLanguage],
                     course_short_description,
                     is_course_paid,
                     lessons: {
@@ -127,6 +135,9 @@ class CoursesController {
                 course_intro_video_url,
                 course_total_length,
                 course_images,
+                benefitsAndAdvantages,
+                courseIncludes,
+                languages,
                 course_short_description,
                 lessons,
                 is_course_paid,
@@ -205,6 +216,9 @@ class CoursesController {
                     course_intro_video_url,
                     course_total_length,
                     course_images,
+                    benefitsAndAdvantages,
+                    courseIncludes,
+                    languages: languages?.length > 0 ? languages : [defaultLanguage],
                     course_short_description,
                     is_course_paid,
                 },

@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { responseFormatter } = require('../../utils/helper');
+const { responseFormatter, calculateAverageRating, calculateAverageByReplies } = require('../../utils/helper');
 const { STATUS_CODE, TEXTS } = require('../../utils/texts');
 
 const prisma = new PrismaClient();
@@ -24,7 +24,8 @@ class EventsController {
                     updatedAt: true,
                 },
             });
-            responseFormatter(res, STATUS_CODE.SUCCESS, { events }, TEXTS.recordFetched);
+            const updatedEvents = await calculateAverageRating(events);
+            responseFormatter(res, STATUS_CODE.SUCCESS, { events: updatedEvents }, TEXTS.recordFetched);
         } catch (err) {
             next(err);
         }
@@ -56,6 +57,7 @@ class EventsController {
                     replies: {
                         select: {
                             id: true,
+                            rating: true,
                             comment: true,
                             website_url: true,
                             createdAt: true,
@@ -73,11 +75,13 @@ class EventsController {
                 },
             });
 
+            const rating = calculateAverageByReplies(event.replies);
+
             if (!event) {
                 return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
             }
 
-            responseFormatter(res, STATUS_CODE.SUCCESS, { event }, TEXTS.recordFetched);
+            responseFormatter(res, STATUS_CODE.SUCCESS, { event: { rating, ...event } }, TEXTS.recordFetched);
         } catch (error) {
             next(error);
         }
@@ -216,7 +220,7 @@ class EventsController {
 
     async commentOnEvent(req, res, next) {
         try {
-            const { comment, website_url } = req.body;
+            const { rating, comment, website_url } = req.body;
             const userId = req.user.id;
             const eventId = req.params.id;
 
@@ -227,11 +231,16 @@ class EventsController {
             if (!event) {
                 return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
             }
-
+            let body = {
+                comment,
+                website_url
+            }
+            if (rating) {
+                body.rating = rating;
+            }
             await prisma.reply.create({
                 data: {
-                    comment,
-                    website_url,
+                    ...body,
                     user: { connect: { id: userId } },
                     event: { connect: { id: eventId } }
                 }
@@ -245,6 +254,7 @@ class EventsController {
                     replies: {
                         select: {
                             id: true,
+                            rating: true,
                             comment: true,
                             website_url: true,
                             createdAt: true,
