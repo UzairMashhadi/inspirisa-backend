@@ -13,6 +13,12 @@ enum UserRole {
   ADMIN
 }
 
+enum Language {
+  ENGLISH
+  SPANISH
+  FRENCH
+}
+
 model User {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
   fullName          String
@@ -34,19 +40,22 @@ model User {
 }
 
 model Course {
-  id                       String   @id @default(auto()) @map("_id") @db.ObjectId
+  id                       String     @id @default(auto()) @map("_id") @db.ObjectId
   category                 String
   course_title             String
   course_thumbnail_image   String
   course_price             String?
   course_intro_video_url   String
   course_total_length      String?
+  languages                Language[]
+  benefitsAndAdvantages    String[]
+  courseIncludes           String[]
   course_images            String[]
   course_short_description String
   lessons                  Lesson[]
-  is_course_paid           Boolean  @default(false)
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  is_course_paid           Boolean    @default(false)
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
 
   UserCourse UserCourse[]
 }
@@ -119,6 +128,7 @@ model Reply {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   userId      String   @db.ObjectId
   eventId     String   @db.ObjectId
+  rating      Float?
   comment     String
   website_url String?
   event       Event    @relation(fields: [eventId], references: [id])
