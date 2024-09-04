@@ -19,4 +19,7 @@ router.patch('/course/:id', auth, isAdmin, CoursesController.updateCourse);
 // Delete a course
 router.delete('/course/:id', auth, isAdmin, CoursesController.deleteCourse);
 
+// Update user course watch time to get progress
+router.post('/update-watched-time', CoursesController.updateCourseProgress);
+
 module.exports = router;

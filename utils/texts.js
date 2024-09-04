@@ -14,7 +14,7 @@ module.exports = {
 
   ERRORS: {
     //USER ERRORS
-
+    passwordCannotBeSame: "New password cannot be the same as the old password.",
     passwordInvalid: "Invalid password!",
     accountExists: "Account exists with this email!",
     userNotExists: "User does not exist!",
@@ -26,7 +26,7 @@ module.exports = {
     inviteAlreadyUsed: "Invite is already used to register",
     invalidInviteLink: "Invitation link is expired! Please contact admin",
     invalidCurrentPassword: "Invalid Current Password",
-    passwordChanged: "Password Updated",
+    passwordChanged: "Your password has been reset successfully. You can now log in with your new password",
     invalidCredentials: "Invalid credentials",
 
     tokenInvalid: "Unauthorized access: Token not found",
@@ -34,7 +34,7 @@ module.exports = {
     unAuthorized: "Unauthorized access",
     emailInvalid: "Invalid Email",
 
-    tokenExpired: "Token expired!",
+    tokenExpired: "The token is invalid or has expired. Please request a new password reset.",
   },
 
   TEXTS: {
@@ -78,6 +78,7 @@ module.exports = {
     fileUploadingFail: "File fail to upload!",
     fileDeletionFail: "File fail to delete!",
     fileDownloading: "File downloading failed",
+    resetPasswordEmailSent: "Password reset email has been sent successfully. Please check your inbox."
 
 
   },

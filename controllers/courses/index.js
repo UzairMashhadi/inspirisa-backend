@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { responseFormatter } = require('../../utils/helper');
-const { STATUS_CODE, TEXTS } = require('../../utils/texts');
+const { STATUS_CODE, TEXTS, ERRORS } = require('../../utils/texts');
 
 const prisma = new PrismaClient();
 
@@ -327,6 +327,78 @@ class CoursesController {
             });
 
             responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.recordDeleted);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updateCourseProgress(req, res, next) {
+        try {
+            const { courseId, watchedTimeInSeconds } = req.body;
+            const userId = req.user.id;
+
+            const userCourse = await prisma.userCourse.findFirst({
+                where: {
+                    userId,
+                    courseId,
+                },
+            });
+
+            if (!userCourse) {
+                return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.unAuthorized);
+            }
+
+            const course = await prisma.course.findUnique({
+                where: { id: courseId },
+                select: { course_total_length: true },
+            });
+
+            if (!course) {
+                return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
+            }
+
+            const totalLengthInSeconds = parseFloat(course.course_total_length) || 0;
+            const progressPercentage = (watchedTimeInSeconds / totalLengthInSeconds) * 100;
+
+            const existingProgress = await prisma.userCourseProgress.findUnique({
+                where: {
+                    userId_courseId: {
+                        userId,
+                        courseId,
+                    },
+                },
+            });
+
+            if (existingProgress) {
+                const newWatchedTimeInSeconds = existingProgress.watchedTime + watchedTimeInSeconds;
+                const newProgressPercentage = (newWatchedTimeInSeconds / totalLengthInSeconds) * 100;
+
+                const updatedProgress = await prisma.userCourseProgress.update({
+                    where: {
+                        userId_courseId: {
+                            userId,
+                            courseId,
+                        },
+                    },
+                    data: {
+                        watchedTime: newWatchedTimeInSeconds,
+                        progressPercentage: newProgressPercentage,
+                    },
+                });
+
+                return responseFormatter(res, STATUS_CODE.SUCCESS, { progress: updatedProgress }, TEXTS.recordUpdated);
+            } else {
+                const newProgress = await prisma.userCourseProgress.create({
+                    data: {
+                        userId,
+                        courseId,
+                        watchedTime: watchedTimeInSeconds,
+                        progressPercentage,
+                    },
+                });
+
+                return responseFormatter(res, STATUS_CODE.CREATED, { progress: newProgress }, TEXTS.recordCreated);
+            }
         } catch (error) {
             next(error);
         }
