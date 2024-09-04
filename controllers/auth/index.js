@@ -13,19 +13,16 @@ class AuthController {
     async registerUser(req, res, next) {
         try {
             const { fullName, email, password, role } = req.body;
-            // Check if user already exists
+
             const existingUser = await prisma.user.findUnique({ where: { email } });
             if (existingUser) {
                 return responseFormatter(res, STATUS_CODE.CONFLICT, {}, ERRORS.userAlreadyExists);
             }
 
-            // Hash password
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            // Generate a verification token
             const verificationToken = crypto.randomBytes(32).toString('hex');
 
-            // Create new user
             const user = await prisma.user.create({
                 data: {
                     fullName,
@@ -38,10 +35,9 @@ class AuthController {
             let addedUser = { ...user };
             delete addedUser.password;
             delete addedUser.verificationToken;
-            // Create verification link
+
             const verificationLink = `${process.env.BASEURL}verify-email?token=${user?.verificationToken}`;
 
-            // Send verification email
             const mailOptions = {
                 to: email,
                 subject: 'Email Verification',
@@ -59,13 +55,12 @@ class AuthController {
     async verifyEmail(req, res, next) {
         try {
             const token = req?.query?.token;
-            // Find user by verification token
+
             const user = await prisma.user.findUnique({ where: { verificationToken: token } });
             if (!user) {
                 return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.invalidToken);
             }
 
-            // Update user to set isEmailVerified to true and clear the verification token
             await prisma.user.update({
                 where: { id: user.id },
                 data: {
@@ -109,13 +104,15 @@ class AuthController {
                     token: true,
                     isEmailVerified: true,
                     role: true,
-                    // Reply: true,
+                    Reply: true,
                     UserCourse: true,
-                    // ContactUs: true,
+                    ContactUs: true,
                     // UserCards: true,
                     PaymentHistory: true,
+                    UserCourseProgress: true,
                     updatedAt: true,
                     createdAt: true,
+
                 },
             });
 
@@ -160,6 +157,81 @@ class AuthController {
             next(err);
         }
     }
+
+    async initiatePasswordReset(req, res, next) {
+        try {
+            const { email } = req.body;
+            const user = await prisma.user.findUnique({ where: { email } });
+
+            if (!user) {
+                return responseFormatter(res, STATUS_CODE.CONFLICT, {}, ERRORS.userNotExists);
+            }
+
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const resetTokenExpiry = new Date(Date.now() + 5 * 60 * 1000); // Token valid for 5 minutes
+
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    resetPasswordToken: resetToken,
+                    resetPasswordExpires: resetTokenExpiry,
+                },
+            });
+
+            const resetLink = `${process.env.BASEURL}reset-password?token=${resetToken}`;
+            const mailOptions = {
+                to: email,
+                subject: 'Password Reset',
+                html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link will expire 5 minutes.</p>`,
+            };
+
+            await sendEmail(mailOptions.to, mailOptions.subject, mailOptions.html);
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.resetPasswordEmailSent);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async resetPassword(req, res, next) {
+        try {
+            const { token, newPassword } = req.body;
+
+            const user = await prisma.user.findFirst({
+                where: {
+                    resetPasswordToken: token,
+                    resetPasswordExpires: {
+                        gte: new Date(),
+                    },
+                },
+            });
+
+            if (!user) {
+                return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.invalidTokenOrExpired);
+            }
+
+            const isSamePassword = await bcrypt.compare(newPassword, user.password);
+            if (isSamePassword) {
+                return responseFormatter(res, STATUS_CODE.CONFLICT, {}, ERRORS.passwordCannotBeSame);
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    password: hashedPassword,
+                    resetPasswordToken: null,
+                    resetPasswordExpires: null,
+                },
+            });
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.passwordChanged);
+        } catch (err) {
+            next(err);
+        }
+    }
+
 }
 
 module.exports = new AuthController();

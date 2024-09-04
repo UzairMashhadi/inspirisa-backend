@@ -31,12 +31,16 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  resetPasswordToken   String?   @unique
+  resetPasswordExpires DateTime?
+
   Reply Reply[]
 
-  UserCourse     UserCourse[]
-  ContactUs      ContactUs[]
-  UserCards      UserCard[]
-  PaymentHistory PaymentHistory[]
+  UserCourse         UserCourse[]
+  ContactUs          ContactUs[]
+  UserCards          UserCard[]
+  PaymentHistory     PaymentHistory[]
+  UserCourseProgress UserCourseProgress[]
 }
 
 model Course {
@@ -57,7 +61,23 @@ model Course {
   createdAt                DateTime   @default(now())
   updatedAt                DateTime   @updatedAt
 
-  UserCourse UserCourse[]
+  UserCourse         UserCourse[]
+  UserCourseProgress UserCourseProgress[]
+}
+
+model UserCourseProgress {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String   @db.ObjectId
+  courseId           String   @db.ObjectId
+  watchedTime        Float
+  progressPercentage Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  User   User   @relation(fields: [userId], references: [id])
+  Course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
 }
 
 model UserCourse {

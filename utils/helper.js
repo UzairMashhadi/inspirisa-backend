@@ -32,11 +32,14 @@ const formatAllCourse = (course) => ({
 });
 
 const responseFormatter = (res, status, data = {}, message) => {
-    return res.status(status).json({
+    let foramttedRes = {
         status,
-        data: data,
         message
-    });
+    }
+    if (data && (Array.isArray(data) ? data?.length : Object.keys(data).length)) {
+        foramttedRes.data = data;
+    }
+    return res.status(status).json(foramttedRes);
 };
 
 const calculateAverageRating = async (events = []) => {
