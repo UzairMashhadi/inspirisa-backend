@@ -1,6 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const { sendEmail } = require('../services/emailService');
+const CoursesController = require('../controllers/courses');
+const EventsController = require("../controllers/events");
+
+// Get all courses
+router.get('/courses', CoursesController.getAllCourses);
+
+// Get a single course by ID
+router.get('/course/:id', CoursesController.getSingleCourseById);
+
+// Get all events
+router.get('/events', EventsController.getAllEvents);
+
+// Get event details
+router.get('/event/:id', EventsController.getSingleEventById);
 
 router.post('/contact-us', async (req, res) => {
 

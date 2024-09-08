@@ -4,12 +4,6 @@ const isAdmin = require('../../middleware/isAdmin');
 const auth = require('../../middleware/auth/auth');
 const router = express.Router();
 
-// Get all courses
-router.get('/courses', CoursesController.getAllCourses);
-
-// Get a single course by ID
-router.get('/course/:id', CoursesController.getSingleCourseById);
-
 // Post a new course
 router.post('/course', auth, isAdmin, CoursesController.postCourse);
 
@@ -20,6 +14,6 @@ router.patch('/course/:id', auth, isAdmin, CoursesController.updateCourse);
 router.delete('/course/:id', auth, isAdmin, CoursesController.deleteCourse);
 
 // Update user course watch time to get progress
-router.post('/update-watched-time', CoursesController.updateCourseProgress);
+router.post('/update-watched-time', auth, CoursesController.updateCourseProgress);
 
 module.exports = router;

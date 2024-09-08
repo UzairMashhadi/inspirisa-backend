@@ -104,12 +104,6 @@ class AuthController {
                     token: true,
                     isEmailVerified: true,
                     role: true,
-                    Reply: true,
-                    UserCourse: true,
-                    ContactUs: true,
-                    // UserCards: true,
-                    PaymentHistory: true,
-                    UserCourseProgress: true,
                     updatedAt: true,
                     createdAt: true,
 
@@ -231,6 +225,59 @@ class AuthController {
             next(err);
         }
     }
+
+    async checkToken(req, res, next) {
+        try {
+            let token = req.headers.authorization || req.cookies.token;
+
+            if (!token) {
+                return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.tokenInvalid);
+            }
+
+            if (token.startsWith('Bearer ')) {
+                token = token.slice(7, token.length);
+            }
+
+            jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+                if (err) {
+                    return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.invalidTokenOrExpired);
+                }
+
+                const currentTime = Date.now();
+                const expiresAt = decoded.exp * 1000;
+                const remainingTime = expiresAt - currentTime;
+
+                let validTime;
+                let isValid = false;
+
+                if (remainingTime > 0) {
+                    const hours = Math.floor(remainingTime / (1000 * 60 * 60));
+                    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+
+                    validTime = `${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+                    isValid = true;
+                } else {
+                    validTime = 'Token has expired';
+                    isValid = false;
+                }
+
+                return responseFormatter(res, STATUS_CODE.SUCCESS, {
+                    token: {
+                        isValid,
+                        validTime,
+                        message: isValid ? ERRORS.tokenIsValid : ERRORS.tokenExpired,
+                        userId: decoded.id,
+                    }
+                });
+
+
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
+
 
 }
 
