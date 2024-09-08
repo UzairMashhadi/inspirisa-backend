@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const eventsRoutes = require('./routes/events');
-const usersRoutes = require('./routes/users');
+const usersRoutes = require('./routes/user');
 const authRoutes = require('./routes/auth');
 const coursesRoutes = require('./routes/courses');
 const publicRoutes = require('./routes');
@@ -22,6 +22,14 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
+
+app.get("/api/test", (req, res) => {
+    res.status(200).json({ message: "Server is working fine!" });
+});
+
+// Public
+app.use('/api', publicRoutes);
+
 // Auth routes
 app.use('/api', authRoutes);
 
@@ -31,20 +39,13 @@ app.use("/api/media", auth, isAdmin, uploadRoutes);
 app.use('/api/stripe', auth, authMiddleware, stripeRoutes);
 
 // User routes
-app.use('/api', authMiddleware, usersRoutes);
+app.use('/api', auth, authMiddleware, usersRoutes);
 
 // Events routes
 app.use('/api', authMiddleware, eventsRoutes);
 
 // Courses routes
 app.use('/api', authMiddleware, coursesRoutes);
-
-// Public
-app.use('/api', publicRoutes);
-
-app.get("/api/test", (req, res) => {
-    res.status(200).json({ message: "Server is working fine!" });
-});
 
 app.all("*", (req, res, next) => {
     const err = new CustomError(`Can't find ${req.originalUrl} on the server!`, 404);

@@ -14,6 +14,8 @@ module.exports = {
 
   ERRORS: {
     //USER ERRORS
+    alreadyWatchedTheEntireTopic: "You have already watched the entire topic",
+    invalidTokenOrExpired: 'Token is either invalid or has expired.',
     passwordCannotBeSame: "New password cannot be the same as the old password.",
     passwordInvalid: "Invalid password!",
     accountExists: "Account exists with this email!",
@@ -35,6 +37,7 @@ module.exports = {
     emailInvalid: "Invalid Email",
 
     tokenExpired: "The token is invalid or has expired. Please request a new password reset.",
+    tokenIsValid: "Token is valid."
   },
 
   TEXTS: {
@@ -78,8 +81,9 @@ module.exports = {
     fileUploadingFail: "File fail to upload!",
     fileDeletionFail: "File fail to delete!",
     fileDownloading: "File downloading failed",
-    resetPasswordEmailSent: "Password reset email has been sent successfully. Please check your inbox."
-
+    resetPasswordEmailSent: "Password reset email has been sent successfully. Please check your inbox.",
+    watchTimeAlreadyAdded: "Watched time for this topic already recorded",
+    watchTimeAdded: "Watched topic created",
 
   },
 

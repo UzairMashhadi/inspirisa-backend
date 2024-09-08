@@ -334,9 +334,10 @@ class CoursesController {
 
     async updateCourseProgress(req, res, next) {
         try {
-            const { courseId, watchedTimeInSeconds } = req.body;
+            const { courseId, lessonId, topicId, watchedTimeInSeconds } = req.body;
             const userId = req.user.id;
 
+            // Check if the user has access to the course
             const userCourse = await prisma.userCourse.findFirst({
                 where: {
                     userId,
@@ -348,6 +349,7 @@ class CoursesController {
                 return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.unAuthorized);
             }
 
+            // Check if the course exists
             const course = await prisma.course.findUnique({
                 where: { id: courseId },
                 select: { course_total_length: true },
@@ -357,8 +359,47 @@ class CoursesController {
                 return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
             }
 
+            // Check if the topic exists
+            const topic = await prisma.topic.findUnique({
+                where: { id: topicId },
+                select: { topic_length: true }, // Select the topic length for validation
+            });
+
+            if (!topic) {
+                return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
+            }
+
             const totalLengthInSeconds = parseFloat(course.course_total_length) || 0;
-            const progressPercentage = (watchedTimeInSeconds / totalLengthInSeconds) * 100;
+            const topicLengthInSeconds = parseFloat(topic.topic_length) || 0;
+
+            // Check if the watched time for this topic has already been recorded
+            const existingWatchedTopic = await prisma.watchedTopic.findUnique({
+                where: {
+                    userId_courseId_lessonId_topicId: {
+                        userId,
+                        courseId,
+                        lessonId,
+                        topicId
+                    }
+                }
+            });
+
+            let remainingWatchTime = watchedTimeInSeconds;
+
+            if (existingWatchedTopic) {
+                // If watched time for the topic is already recorded, check if the new time exceeds the topic length
+                const totalWatchedTimeForTopic = existingWatchedTopic.watchedTime + watchedTimeInSeconds;
+
+                if (totalWatchedTimeForTopic >= topicLengthInSeconds) {
+                    remainingWatchTime = topicLengthInSeconds - existingWatchedTopic.watchedTime; // Add only the remaining time
+                }
+
+                if (remainingWatchTime <= 0) {
+                    return responseFormatter(res, STATUS_CODE.BAD_REQUEST, {}, ERRORS.alreadyWatchedTheEntireTopic);
+                }
+            }
+
+            const progressPercentage = (remainingWatchTime / totalLengthInSeconds) * 100;
 
             const existingProgress = await prisma.userCourseProgress.findUnique({
                 where: {
@@ -370,7 +411,7 @@ class CoursesController {
             });
 
             if (existingProgress) {
-                const newWatchedTimeInSeconds = existingProgress.watchedTime + watchedTimeInSeconds;
+                const newWatchedTimeInSeconds = existingProgress.watchedTime + remainingWatchTime;
                 const newProgressPercentage = (newWatchedTimeInSeconds / totalLengthInSeconds) * 100;
 
                 const updatedProgress = await prisma.userCourseProgress.update({
@@ -386,15 +427,53 @@ class CoursesController {
                     },
                 });
 
+                // Update the WatchedTopic entry or create if none exists
+                if (existingWatchedTopic) {
+                    await prisma.watchedTopic.update({
+                        where: {
+                            userId_courseId_lessonId_topicId: {
+                                userId,
+                                courseId,
+                                lessonId,
+                                topicId,
+                            },
+                        },
+                        data: {
+                            watchedTime: existingWatchedTopic.watchedTime + remainingWatchTime,
+                        },
+                    });
+                } else {
+                    await prisma.watchedTopic.create({
+                        data: {
+                            userId,
+                            courseId,
+                            lessonId,
+                            topicId,
+                            watchedTime: remainingWatchTime,
+                        }
+                    });
+                }
+
                 return responseFormatter(res, STATUS_CODE.SUCCESS, { progress: updatedProgress }, TEXTS.recordUpdated);
             } else {
                 const newProgress = await prisma.userCourseProgress.create({
                     data: {
                         userId,
                         courseId,
-                        watchedTime: watchedTimeInSeconds,
+                        watchedTime: remainingWatchTime,
                         progressPercentage,
                     },
+                });
+
+                // Create a new WatchedTopic entry
+                await prisma.watchedTopic.create({
+                    data: {
+                        userId,
+                        courseId,
+                        lessonId,
+                        topicId,
+                        watchedTime: remainingWatchTime,
+                    }
                 });
 
                 return responseFormatter(res, STATUS_CODE.CREATED, { progress: newProgress }, TEXTS.recordCreated);
@@ -405,5 +484,4 @@ class CoursesController {
     }
 
 }
-
 module.exports = new CoursesController();
