@@ -18,7 +18,12 @@ class AuthController {
             if (existingUser) {
                 return responseFormatter(res, STATUS_CODE.CONFLICT, {}, ERRORS.userAlreadyExists);
             }
+            const minLength = 6;
+            const maxLength = 20;
 
+            if (password.length < minLength || password.length > maxLength) {
+                return responseFormatter(res, STATUS_CODE.BAD_REQUEST, {}, `Password must be between ${minLength} and ${maxLength} characters long.`);
+            }
             const hashedPassword = await bcrypt.hash(password, 10);
 
             const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -190,6 +195,13 @@ class AuthController {
     async resetPassword(req, res, next) {
         try {
             const { token, newPassword } = req.body;
+
+            const minLength = 6;
+            const maxLength = 20;
+
+            if (newPassword.length < minLength || newPassword.length > maxLength) {
+                return responseFormatter(res, STATUS_CODE.BAD_REQUEST, {}, `Password must be between ${minLength} and ${maxLength} characters long.`);
+            }
 
             const user = await prisma.user.findFirst({
                 where: {
