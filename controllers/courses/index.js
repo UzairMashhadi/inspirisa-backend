@@ -9,8 +9,28 @@ const defaultLanguage = 'ENGLISH';
 class CoursesController {
     async getAllCourses(req, res, next) {
         try {
-            const courses = await prisma.course.findMany();
-            responseFormatter(res, STATUS_CODE.SUCCESS, { courses }, TEXTS.recordFetched);
+            const courses = await prisma.course.findMany({
+                include: {
+                    lessons: {
+                        include: {
+                            topics: true,
+                        },
+                    },
+                },
+            });
+
+            const coursesWithVideoCount = courses.map(course => {
+                const totalVideos = course.lessons.reduce((count, lesson) => {
+                    return count + lesson.topics.length;
+                }, 0);
+
+                return {
+                    ...course,
+                    totalVideos,
+                };
+            });
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, { courses: coursesWithVideoCount }, TEXTS.recordFetched);
         } catch (error) {
             next(error);
         }
@@ -337,17 +357,18 @@ class CoursesController {
             const { courseId, lessonId, topicId, watchedTimeInSeconds } = req.body;
             const userId = req.user.id;
 
-            // Check if the user has access to the course
-            const userCourse = await prisma.userCourse.findFirst({
-                where: {
-                    userId,
-                    courseId,
-                },
-            });
 
-            if (!userCourse) {
-                return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.unAuthorized);
-            }
+            //     // Check if the user has access to the course
+            //     const userCourse = await prisma.userCourse.findFirst({
+            //         where: {
+            //             userId,
+            //             courseId,
+            //         },
+            //     });
+
+            //     if (!userCourse) {
+            //         return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.unAuthorized);
+            //     }
 
             // Check if the course exists
             const course = await prisma.course.findUnique({
