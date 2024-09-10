@@ -290,6 +290,40 @@ class AuthController {
         }
     }
 
+    async changePassword(req, res, next) {
+        try {
+            const { id } = req.user;
+            const { newPassword } = req.body;
+
+            if (!newPassword) {
+                return responseFormatter(res, STATUS_CODE.BAD_REQUEST, {}, TEXTS.requiredFieldsMissing);
+            }
+
+            const user = await prisma.user.findUnique({
+                where: { id },
+            });
+
+            if (!user) {
+                return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.userNotFound);
+            }
+
+            const isOldPassword = await bcrypt.compare(newPassword, user.password);
+            if (isOldPassword) {
+                return responseFormatter(res, STATUS_CODE.BAD_REQUEST, {}, TEXTS.passwordSameAsOld);
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            await prisma.user.update({
+                where: { id },
+                data: { password: hashedPassword },
+            });
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.passwordChangedSuccessfully);
+        } catch (error) {
+            next(error);
+        }
+    }
 
 }
 

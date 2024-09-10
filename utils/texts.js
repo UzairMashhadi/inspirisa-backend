@@ -84,6 +84,9 @@ module.exports = {
     resetPasswordEmailSent: "Password reset email has been sent successfully. Please check your inbox.",
     watchTimeAlreadyAdded: "Watched time for this topic already recorded",
     watchTimeAdded: "Watched topic created",
+    passwordChangedSuccessfully: 'Your password has been successfully changed.',
+    invalidCurrentPassword: 'The current password is incorrect.',
+    passwordSameAsOld: 'The new password cannot be the same as the old password.',
 
   },
 
