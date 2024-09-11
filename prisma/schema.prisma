@@ -1,4 +1,3 @@
-// primsa
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
@@ -23,6 +22,11 @@ model User {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
   fullName          String
   email             String   @unique
+  profileImage      String?
+  aboutMe           String?
+  phoneNumber       String?
+  facebook          String?
+  twitter           String?
   password          String
   isEmailVerified   Boolean  @default(false)
   verificationToken String?  @unique
@@ -34,14 +38,14 @@ model User {
   resetPasswordToken   String?   @unique
   resetPasswordExpires DateTime?
 
-  Reply Reply[]
-
+  Reply              Reply[]
   UserCourse         UserCourse[]
   ContactUs          ContactUs[]
   UserCards          UserCard[]
   PaymentHistory     PaymentHistory[]
   UserCourseProgress UserCourseProgress[]
   WatchedTopic       WatchedTopic[]
+  EventRating        EventRating[]
 }
 
 model Course {
@@ -153,8 +157,9 @@ model Event {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  organizer Organizer? @relation(fields: [organizerId], references: [id])
-  replies   Reply[]
+  organizer   Organizer?    @relation(fields: [organizerId], references: [id])
+  replies     Reply[]
+  EventRating EventRating[]
 }
 
 model Organizer {
@@ -169,7 +174,6 @@ model Reply {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   userId      String   @db.ObjectId
   eventId     String   @db.ObjectId
-  rating      Float?
   comment     String
   website_url String?
   event       Event    @relation(fields: [eventId], references: [id])
@@ -211,4 +215,17 @@ model PaymentHistory {
   createdAt             DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model EventRating {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  eventId   String   @db.ObjectId
+  rating    Float
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
 }
