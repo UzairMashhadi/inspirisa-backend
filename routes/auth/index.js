@@ -20,4 +20,6 @@ router.get('/check-token', AuthController.checkToken);
 
 router.post('/change-password', auth, AuthController.changePassword);
 
+router.patch('/update-user', auth, AuthController.updateUser);
+
 module.exports = router;

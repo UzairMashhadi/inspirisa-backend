@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { responseFormatter, calculateAverageRating, calculateAverageByReplies } = require('../../utils/helper');
+const { responseFormatter, calculateAverageRating, calculateAverageByEventRatings } = require('../../utils/helper');
 const { STATUS_CODE, TEXTS } = require('../../utils/texts');
 
 const prisma = new PrismaClient();
@@ -54,10 +54,10 @@ class EventsController {
                     video_url: true,
                     images_url_array: true,
                     organizer: true,
+                    EventRating: true,
                     replies: {
                         select: {
                             id: true,
-                            rating: true,
                             comment: true,
                             website_url: true,
                             createdAt: true,
@@ -68,14 +68,14 @@ class EventsController {
                                     email: true,
                                 }
                             }
-                        }
+                        },
                     },
                     createdAt: true,
                     updatedAt: true,
                 },
             });
 
-            const rating = calculateAverageByReplies(event.replies);
+            const rating = calculateAverageByEventRatings(event.EventRating);
 
             if (!event) {
                 return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
@@ -220,7 +220,7 @@ class EventsController {
 
     async commentOnEvent(req, res, next) {
         try {
-            const { rating, comment, website_url } = req.body;
+            const { comment, website_url } = req.body;
             const userId = req.user.id;
             const eventId = req.params.id;
 
@@ -231,16 +231,11 @@ class EventsController {
             if (!event) {
                 return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
             }
-            let body = {
-                comment,
-                website_url
-            }
-            if (rating) {
-                body.rating = rating;
-            }
+
             await prisma.reply.create({
                 data: {
-                    ...body,
+                    comment,
+                    website_url,
                     user: { connect: { id: userId } },
                     event: { connect: { id: eventId } }
                 }
@@ -254,7 +249,6 @@ class EventsController {
                     replies: {
                         select: {
                             id: true,
-                            rating: true,
                             comment: true,
                             website_url: true,
                             createdAt: true,
@@ -274,6 +268,70 @@ class EventsController {
             next(error);
         }
     }
+
+    async rateEvent(req, res, next) {
+        try {
+            const { rating, eventId } = req.body;
+            const userId = req.user.id;
+
+            const event = await prisma.event.findUnique({
+                where: { id: eventId },
+            });
+
+            if (!event) {
+                return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
+            }
+
+            const existingRating = await prisma.eventRating.findUnique({
+                where: {
+                    userId_eventId: {
+                        userId,
+                        eventId
+                    }
+                }
+            });
+
+            if (existingRating) {
+                await prisma.eventRating.update({
+                    where: { id: existingRating.id },
+                    data: { rating }
+                });
+            } else {
+                await prisma.eventRating.create({
+                    data: {
+                        userId,
+                        eventId,
+                        rating,
+                    }
+                });
+            }
+
+            const EventRating = await prisma.eventRating.findUnique({
+                where: {
+                    userId_eventId: {
+                        userId,
+                        eventId
+                    }
+                },
+                select: {
+                    id: true,
+                    rating: true,
+                    createdAt: true,
+                    user: {
+                        select: {
+                            id: true,
+                            fullName: true,
+                        }
+                    }
+                }
+            });
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, { EventRating }, TEXTS.recordUpdated);
+        } catch (error) {
+            next(error);
+        }
+    }
+
 }
 
-module.exports = new EventsController();
+module.exports = new EventsController(); ``

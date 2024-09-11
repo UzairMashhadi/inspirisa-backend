@@ -44,27 +44,29 @@ const responseFormatter = (res, status, data = {}, message) => {
 
 const calculateAverageRating = async (events = []) => {
     const eventsWithAverageRating = await Promise.all(events.map(async event => {
-        const replies = await prisma.reply.findMany({
+
+        const eventRatings = await prisma.eventRating.findMany({
             where: { eventId: event.id },
             select: { rating: true }
         });
 
-        const ratings = replies.map(reply => reply.rating);
-        const rating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null;
-        let r = parseFloat(rating.toFixed(1))
+        const ratings = eventRatings.map(eventRating => eventRating.rating);
+        const averageRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null;
+        const roundedRating = averageRating !== null ? parseFloat(averageRating) : null;
+
         return {
-            rating: r,
             ...event,
+            rating: roundedRating,
         };
     }));
 
     return eventsWithAverageRating;
 }
 
-const calculateAverageByReplies = (replies = []) => {
-    const ratings = replies.map(reply => reply.rating);
-    const rating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null;
-    return parseFloat(rating.toFixed(1));
-};
+const calculateAverageByEventRatings = (eventRatings = []) => {
+    const ratings = eventRatings.map(eventRating => eventRating.rating);
+    const averageRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null;
+    return parseFloat(averageRating.toFixed(1));
+}
 
-module.exports = { formatCourse, formatAllCourse, responseFormatter, calculateAverageRating, calculateAverageByReplies };
+module.exports = { formatCourse, formatAllCourse, responseFormatter, calculateAverageRating, calculateAverageByEventRatings };

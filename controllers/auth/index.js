@@ -106,12 +106,19 @@ class AuthController {
                     id: true,
                     fullName: true,
                     email: true,
+                    profileImage: true,
+                    aboutMe: true,
+                    phoneNumber: true,
+                    facebook: true,
+                    twitter: true,
                     token: true,
                     isEmailVerified: true,
                     role: true,
+                    verificationToken: true,
+                    resetPasswordToken: true,
+                    resetPasswordExpires: true,
                     updatedAt: true,
                     createdAt: true,
-
                 },
             });
 
@@ -320,6 +327,39 @@ class AuthController {
             });
 
             responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.passwordChangedSuccessfully);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updateUser(req, res, next) {
+        const userId = req.user.id;
+        const {
+            fullName,
+            profileImage,
+            aboutMe,
+            phoneNumber,
+            facebook,
+            twitter
+        } = req.body;
+
+        try {
+
+            let updatedUser = await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    fullName,
+                    profileImage,
+                    aboutMe,
+                    phoneNumber,
+                    facebook,
+                    twitter,
+                },
+            });
+
+            delete updatedUser.password;
+
+            responseFormatter(res, STATUS_CODE.SUCCESS, { user: updatedUser }, TEXTS.recordUpdated);
         } catch (error) {
             next(error);
         }
