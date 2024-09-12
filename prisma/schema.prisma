@@ -34,6 +34,7 @@ model User {
   role              UserRole @default(CLIENT)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  isDeleted         Boolean  @default(false)
 
   resetPasswordToken   String?   @unique
   resetPasswordExpires DateTime?

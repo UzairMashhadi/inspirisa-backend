@@ -33,7 +33,7 @@ app.use('/api', publicRoutes);
 // Auth routes
 app.use('/api', authRoutes);
 
-app.use("/api/media", auth, isAdmin, uploadRoutes);
+app.use("/api/media", auth, uploadRoutes);
 
 // Stripe routes
 app.use('/api/stripe', auth, authMiddleware, stripeRoutes);
