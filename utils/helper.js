@@ -2,7 +2,6 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 
-// Helper function to format course data
 const formatCourse = (course) => ({
     _id: course.id,
     category: course.category,
@@ -69,4 +68,49 @@ const calculateAverageByEventRatings = (eventRatings = []) => {
     return parseFloat(averageRating.toFixed(1));
 }
 
-module.exports = { formatCourse, formatAllCourse, responseFormatter, calculateAverageRating, calculateAverageByEventRatings };
+const generateEmailHtml = (bodyContent) => {
+    return `
+        <html>
+            <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9f9f9;">
+                    <tr>
+                        <td>
+                            <!-- Header -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-bottom: 1px solid #dddddd;">
+                                <tr>
+                                    <td style="padding: 20px; text-align: center;">
+                                        <img src="https://inspirisa-media-2024.s3.eu-north-1.amazonaws.com/logo_file_1726178754612.png" alt="Inspirisa Logo" style="max-width: 150px;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Body -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; padding: 20px;">
+                                <tr>
+                                    <td>
+                                        ${bodyContent}
+                                    </td>
+                                </tr>
+                            </table>
+                            <!-- Footer -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #eeeeee; border-top: 1px solid #dddddd; padding: 20px; text-align: center;">
+                                <tr>
+                                    <td>
+                                        <p style="font-size: 14px; color: #777777; margin: 10;">
+                                            &copy; ${new Date().getFullYear()} Inspirisa. All rights reserved.
+                                        </p>
+                                        <p style="font-size: 14px; color: #777777; margin: 0;">
+                                            123 Company Address, City, Country
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+        </html>
+    `;
+}
+
+
+module.exports = { formatCourse, formatAllCourse, responseFormatter, calculateAverageRating, calculateAverageByEventRatings, generateEmailHtml };

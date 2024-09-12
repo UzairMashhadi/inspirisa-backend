@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { responseFormatter } = require('../../utils/helper');
+const { responseFormatter, generateEmailHtml } = require('../../utils/helper');
 const { STATUS_CODE, ERRORS, TEXTS } = require('../../utils/texts');
 const { sendEmail } = require('../../services/emailService');
 
@@ -46,7 +46,7 @@ class AuthController {
             const mailOptions = {
                 to: email,
                 subject: 'Email Verification',
-                html: `<p>Click <a href="${verificationLink}">here</a> to verify your email address.</p>`
+                html: generateEmailHtml(`<p>Click <a href="${verificationLink}">here</a> to verify your email address.</p>`)
             };
 
             await sendEmail(mailOptions.to, mailOptions.subject, mailOptions.html);
@@ -84,6 +84,10 @@ class AuthController {
         try {
             const { email, password } = req.body;
             const user = await prisma.user.findUnique({ where: { email } });
+
+            if (user.isDeleted) {
+                return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.userNotFound);
+            }
 
             if (!user) {
                 return responseFormatter(res, STATUS_CODE.CONFLICT, {}, ERRORS.userNotExists);
@@ -188,7 +192,7 @@ class AuthController {
             const mailOptions = {
                 to: email,
                 subject: 'Password Reset',
-                html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link will expire 5 minutes.</p>`,
+                html: generateEmailHtml(`<p>Click <a href="${resetLink}">here</a> to reset your password. This link will expire 5 minutes.</p>`),
             };
 
             await sendEmail(mailOptions.to, mailOptions.subject, mailOptions.html);
