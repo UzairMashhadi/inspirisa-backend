@@ -188,7 +188,7 @@ class AuthController {
                 },
             });
 
-            const resetLink = `${process.env.BASEURL}reset-password?token=${resetToken}`;
+            const resetLink = `${process.env.FE_BASE_URL}reset-password?token=${resetToken}`;
             const mailOptions = {
                 to: email,
                 subject: 'Password Reset',
