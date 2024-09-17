@@ -299,6 +299,8 @@ class CoursesController {
                         },
                     },
                     UserCourse: true,
+                    UserCourseProgress: true,
+                    WatchedTopic: true,
                 },
             });
 
@@ -319,6 +321,18 @@ class CoursesController {
             const lessonIds = course.lessons.map(lesson => lesson.id);
 
             await prisma.$transaction(async (prisma) => {
+                await prisma.watchedTopic.deleteMany({
+                    where: {
+                        courseId: id,
+                    },
+                });
+
+                await prisma.userCourseProgress.deleteMany({
+                    where: {
+                        courseId: id,
+                    },
+                });
+
                 await prisma.document.deleteMany({
                     where: {
                         id: { in: topicDocumentIds },
@@ -356,7 +370,6 @@ class CoursesController {
         try {
             const { courseId, lessonId, topicId, watchedTimeInSeconds } = req.body;
             const userId = req.user.id;
-
 
             //     // Check if the user has access to the course
             //     const userCourse = await prisma.userCourse.findFirst({
