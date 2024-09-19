@@ -307,7 +307,6 @@ class CoursesController {
         }
     }
 
-
     async deleteCourse(req, res, next) {
         try {
             const { id } = req?.params;
