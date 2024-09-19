@@ -146,137 +146,154 @@ class CoursesController {
 
     async updateCourse(req, res, next) {
         try {
-            const { id } = req.params;
-            const {
-                category,
-                course_title,
-                course_price,
-                course_thumbnail_image,
-                course_intro_video_url,
-                course_total_length,
-                course_images,
-                benefitsAndAdvantages,
-                courseIncludes,
-                languages,
-                course_short_description,
-                lessons,
-                is_course_paid,
-            } = req.body;
+            const courseData = req.body; // Expecting complete course data
+            const courseId = courseData.id; // Extracting course ID
 
-            const course = await prisma.course.findUnique({
-                where: { id },
+            // Fetch existing course data
+            const existingCourse = await prisma.course.findUnique({
+                where: { id: courseId },
                 include: {
                     lessons: {
                         include: {
                             topics: {
                                 include: {
+                                    WatchedTopic: true,
                                     topic_documents: true,
                                 },
                             },
                         },
                     },
-                    UserCourse: true,
                 },
             });
 
-            if (!course) {
+            if (!existingCourse) {
                 return responseFormatter(res, STATUS_CODE.NOT_FOUND, {}, TEXTS.recordNotFound);
             }
 
-            const hasLessons = course.lessons.length > 0;
+            // Prepare data for updating, excluding ID and other immutable fields
+            const { id, updatedAt, UserCourse, lessons, ...courseUpdates } = courseData;
 
-            if (hasLessons) {
-                const topicDocumentIds = course.lessons.flatMap(lesson =>
-                    lesson.topics.flatMap(topic =>
-                        topic.topic_documents.map(doc => doc.id)
-                    )
-                );
-
-                const topicIds = course.lessons.flatMap(lesson =>
-                    lesson.topics.map(topic => topic.id)
-                );
-
-                const lessonIds = course.lessons.map(lesson => lesson.id);
-
-                await prisma.$transaction(async (prisma) => {
-                    // Delete existing data
-                    await prisma.document.deleteMany({
-                        where: {
-                            id: { in: topicDocumentIds },
-                        },
-                    });
-
-                    await prisma.topic.deleteMany({
-                        where: {
-                            id: { in: topicIds },
-                        },
-                    });
-
-                    await prisma.lesson.deleteMany({
-                        where: {
-                            id: { in: lessonIds },
-                        },
-                    });
-
-                    // Also delete the user-course relationships if needed
-                    await prisma.userCourse.deleteMany({
-                        where: { courseId: id },
-                    });
-                });
-            }
-
-            // Update the course details
-            await prisma.course.update({
-                where: { id },
+            // Update the main course fields
+            const updatedCourse = await prisma.course.update({
+                where: { id: courseId },
                 data: {
-                    category,
-                    course_title,
-                    course_thumbnail_image,
-                    course_price,
-                    course_intro_video_url,
-                    course_total_length,
-                    course_images,
-                    benefitsAndAdvantages,
-                    courseIncludes,
-                    languages: languages?.length > 0 ? languages : [defaultLanguage],
-                    course_short_description,
-                    is_course_paid,
+                    ...courseUpdates,
+                    updatedAt: new Date(), // Only update the timestamp
                 },
             });
 
-            // Create new lessons with their topics and documents
-            for (const lesson of lessons) {
-                // Create the lesson
-                const newLesson = await prisma.lesson.create({
-                    data: {
-                        lesson_title: lesson.lesson_title,
-                        courseId: id,
-                    },
-                });
+            // Update lessons: delete existing ones if not in the new data
+            const existingLessonIds = existingCourse.lessons.map(lesson => lesson.id);
+            const newLessonIds = lessons.map(lesson => lesson.id);
 
-                // Create topics and documents for the new lesson
-                for (const topic of lesson.topics) {
-                    const newTopic = await prisma.topic.create({
+            // Delete lessons that are no longer present
+            for (const lessonId of existingLessonIds) {
+                if (!newLessonIds.includes(lessonId)) {
+                    await prisma.lesson.delete({ where: { id: lessonId } });
+                }
+            }
+
+            // Update or create lessons
+            for (const lessonData of lessons) {
+                const { id: lessonId, topics, ...lessonUpdates } = lessonData;
+
+                if (existingLessonIds.includes(lessonId)) {
+                    // Update existing lesson, preserving courseId
+                    await prisma.lesson.update({
+                        where: { id: lessonId },
                         data: {
-                            topic_title: topic.topic_title,
-                            topic_length: topic.topic_length,
-                            topic_video_url: topic.topic_video_url,
-                            lessonId: newLesson.id,
+                            ...lessonUpdates, // Only update the fields intended to change
                         },
                     });
+                } else {
+                    // Create new lesson
+                    await prisma.lesson.create({
+                        data: {
+                            course: { connect: { id: courseId } }, // Connect to course
+                            ...lessonUpdates,
+                        },
+                    });
+                }
 
-                    for (const document of topic.topic_documents) {
-                        await prisma.document.create({
+                // Update topics: delete existing ones if not in the new data
+                const existingTopicIds = existingCourse.lessons.find(lesson => lesson.id === lessonId).topics.map(topic => topic.id);
+                const newTopicIds = topics.map(topic => topic.id);
+
+                // Delete topics that are no longer present and their watched times
+                for (const topicId of existingTopicIds) {
+                    if (!newTopicIds.includes(topicId)) {
+                        // Delete watched times for this topic
+                        await prisma.watchedTopic.deleteMany({
+                            where: { courseId, lessonId, topicId },
+                        });
+
+                        // Now delete the topic
+                        await prisma.topic.delete({ where: { id: topicId } });
+                    }
+                }
+
+                // Update or create topics
+                for (const topicData of topics) {
+                    const { id: topicId, topic_documents, ...topicUpdates } = topicData;
+
+                    if (existingTopicIds.includes(topicId)) {
+                        // Update existing topic
+                        await prisma.topic.update({
+                            where: { id: topicId },
                             data: {
-                                url: document.url,
-                                topicId: newTopic.id,
+                                ...topicUpdates, // Only update the fields intended to change
                             },
                         });
+                    } else {
+                        // Create new topic
+                        await prisma.topic.create({
+                            data: {
+                                lesson: { connect: { id: lessonId } }, // Connect to lesson
+                                ...topicUpdates,
+                            },
+                        });
+                    }
+
+                    // Handle documents: delete existing ones if not in the new data
+                    const existingDocumentIds = existingCourse.lessons
+                        .find(lesson => lesson.id === lessonId)
+                        .topics.find(topic => topic.id === topicId)
+                        .topic_documents.map(doc => doc.id);
+                    const newDocumentIds = topic_documents.map(doc => doc.id);
+
+                    // Delete documents that are no longer present
+                    for (const documentId of existingDocumentIds) {
+                        if (!newDocumentIds.includes(documentId)) {
+                            await prisma.document.delete({ where: { id: documentId } });
+                        }
+                    }
+
+                    // Update or create documents
+                    for (const documentData of topic_documents) {
+                        const { id: documentId, ...documentUpdates } = documentData;
+
+                        if (existingDocumentIds.includes(documentId)) {
+                            // Update existing document
+                            await prisma.document.update({
+                                where: { id: documentId },
+                                data: {
+                                    ...documentUpdates, // Only update the fields intended to change
+                                },
+                            });
+                        } else {
+                            // Create new document
+                            await prisma.document.create({
+                                data: {
+                                    topic: { connect: { id: topicId } }, // Connect to topic
+                                    ...documentUpdates,
+                                },
+                            });
+                        }
                     }
                 }
             }
 
-            responseFormatter(res, STATUS_CODE.SUCCESS, {}, TEXTS.recordUpdated);
+            return responseFormatter(res, STATUS_CODE.SUCCESS, { course: updatedCourse }, TEXTS.recordUpdated);
         } catch (error) {
             next(error);
         }
@@ -370,18 +387,6 @@ class CoursesController {
         try {
             const { courseId, lessonId, topicId, watchedTimeInSeconds } = req.body;
             const userId = req.user.id;
-
-            //     // Check if the user has access to the course
-            //     const userCourse = await prisma.userCourse.findFirst({
-            //         where: {
-            //             userId,
-            //             courseId,
-            //         },
-            //     });
-
-            //     if (!userCourse) {
-            //         return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, ERRORS.unAuthorized);
-            //     }
 
             // Check if the course exists
             const course = await prisma.course.findUnique({
