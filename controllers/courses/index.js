@@ -145,6 +145,8 @@ class CoursesController {
     }
 
     async updateCourse(req, res, next) {
+        const prismaTransaction = [];
+
         try {
             const courseData = req.body; // Expecting complete course data
             const courseId = courseData.id; // Extracting course ID
@@ -173,23 +175,26 @@ class CoursesController {
             // Prepare data for updating, excluding ID and other immutable fields
             const { id, updatedAt, UserCourse, lessons, ...courseUpdates } = courseData;
 
-            // Update the main course fields
-            const updatedCourse = await prisma.course.update({
-                where: { id: courseId },
-                data: {
-                    ...courseUpdates,
-                    updatedAt: new Date(), // Only update the timestamp
-                },
-            });
+            // Add the main course update to the transaction
+            prismaTransaction.push(
+                prisma.course.update({
+                    where: { id: courseId },
+                    data: {
+                        ...courseUpdates,
+                        updatedAt: new Date(),
+                    },
+                })
+            );
 
-            // Update lessons: delete existing ones if not in the new data
             const existingLessonIds = existingCourse.lessons.map(lesson => lesson.id);
             const newLessonIds = lessons.map(lesson => lesson.id);
 
             // Delete lessons that are no longer present
             for (const lessonId of existingLessonIds) {
                 if (!newLessonIds.includes(lessonId)) {
-                    await prisma.lesson.delete({ where: { id: lessonId } });
+                    prismaTransaction.push(
+                        prisma.lesson.delete({ where: { id: lessonId } })
+                    );
                 }
             }
 
@@ -198,37 +203,36 @@ class CoursesController {
                 const { id: lessonId, topics, ...lessonUpdates } = lessonData;
 
                 if (existingLessonIds.includes(lessonId)) {
-                    // Update existing lesson, preserving courseId
-                    await prisma.lesson.update({
-                        where: { id: lessonId },
-                        data: {
-                            ...lessonUpdates, // Only update the fields intended to change
-                        },
-                    });
+                    prismaTransaction.push(
+                        prisma.lesson.update({
+                            where: { id: lessonId },
+                            data: { ...lessonUpdates },
+                        })
+                    );
                 } else {
-                    // Create new lesson
-                    await prisma.lesson.create({
-                        data: {
-                            course: { connect: { id: courseId } }, // Connect to course
-                            ...lessonUpdates,
-                        },
-                    });
+                    prismaTransaction.push(
+                        prisma.lesson.create({
+                            data: {
+                                course: { connect: { id: courseId } },
+                                ...lessonUpdates,
+                            },
+                        })
+                    );
                 }
 
-                // Update topics: delete existing ones if not in the new data
                 const existingTopicIds = existingCourse.lessons.find(lesson => lesson.id === lessonId).topics.map(topic => topic.id);
                 const newTopicIds = topics.map(topic => topic.id);
 
-                // Delete topics that are no longer present and their watched times
+                // Delete topics that are no longer present
                 for (const topicId of existingTopicIds) {
                     if (!newTopicIds.includes(topicId)) {
-                        // Delete watched times for this topic
-                        await prisma.watchedTopic.deleteMany({
-                            where: { courseId, lessonId, topicId },
-                        });
-
-                        // Now delete the topic
-                        await prisma.topic.delete({ where: { id: topicId } });
+                        // Add watched topic deletion and topic deletion to transaction
+                        prismaTransaction.push(
+                            prisma.watchedTopic.deleteMany({
+                                where: { courseId, lessonId, topicId },
+                            }),
+                            prisma.topic.delete({ where: { id: topicId } })
+                        );
                     }
                 }
 
@@ -237,24 +241,23 @@ class CoursesController {
                     const { id: topicId, topic_documents, ...topicUpdates } = topicData;
 
                     if (existingTopicIds.includes(topicId)) {
-                        // Update existing topic
-                        await prisma.topic.update({
-                            where: { id: topicId },
-                            data: {
-                                ...topicUpdates, // Only update the fields intended to change
-                            },
-                        });
+                        prismaTransaction.push(
+                            prisma.topic.update({
+                                where: { id: topicId },
+                                data: { ...topicUpdates },
+                            })
+                        );
                     } else {
-                        // Create new topic
-                        await prisma.topic.create({
-                            data: {
-                                lesson: { connect: { id: lessonId } }, // Connect to lesson
-                                ...topicUpdates,
-                            },
-                        });
+                        prismaTransaction.push(
+                            prisma.topic.create({
+                                data: {
+                                    lesson: { connect: { id: lessonId } },
+                                    ...topicUpdates,
+                                },
+                            })
+                        );
                     }
 
-                    // Handle documents: delete existing ones if not in the new data
                     const existingDocumentIds = existingCourse.lessons
                         .find(lesson => lesson.id === lessonId)
                         .topics.find(topic => topic.id === topicId)
@@ -264,7 +267,9 @@ class CoursesController {
                     // Delete documents that are no longer present
                     for (const documentId of existingDocumentIds) {
                         if (!newDocumentIds.includes(documentId)) {
-                            await prisma.document.delete({ where: { id: documentId } });
+                            prismaTransaction.push(
+                                prisma.document.delete({ where: { id: documentId } })
+                            );
                         }
                     }
 
@@ -273,25 +278,28 @@ class CoursesController {
                         const { id: documentId, ...documentUpdates } = documentData;
 
                         if (existingDocumentIds.includes(documentId)) {
-                            // Update existing document
-                            await prisma.document.update({
-                                where: { id: documentId },
-                                data: {
-                                    ...documentUpdates, // Only update the fields intended to change
-                                },
-                            });
+                            prismaTransaction.push(
+                                prisma.document.update({
+                                    where: { id: documentId },
+                                    data: { ...documentUpdates },
+                                })
+                            );
                         } else {
-                            // Create new document
-                            await prisma.document.create({
-                                data: {
-                                    topic: { connect: { id: topicId } }, // Connect to topic
-                                    ...documentUpdates,
-                                },
-                            });
+                            prismaTransaction.push(
+                                prisma.document.create({
+                                    data: {
+                                        topic: { connect: { id: topicId } },
+                                        ...documentUpdates,
+                                    },
+                                })
+                            );
                         }
                     }
                 }
             }
+
+            // Execute all the operations in a transaction
+            const [updatedCourse] = await prisma.$transaction(prismaTransaction);
 
             return responseFormatter(res, STATUS_CODE.SUCCESS, { course: updatedCourse }, TEXTS.recordUpdated);
         } catch (error) {
