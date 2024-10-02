@@ -2,26 +2,28 @@ const fs = require("fs");
 const awsS3 = require("../config/awsS3Config");
 const { STATUS_CODE, TEXTS } = require("./texts");
 // Upload file
-module.exports.uploadFile = async (filePath, bucketName, fileName, res) => {
+module.exports.uploadFile = async (filePath, bucketName, fileName, res, retries = 3) => {
   try {
-    const fileContent = fs.readFileSync(filePath);
-
+    const fileStream = fs.createReadStream(filePath);
     const params = {
       Bucket: bucketName,
       Key: fileName,
-      Body: fileContent,
-      // ACL: "public-read",
+      Body: fileStream,
     };
-
     const data = await awsS3.upload(params).promise();
     console.log(`File uploaded successfully. ${data.Location}`);
   } catch (err) {
-    console.log(err)
-    // fs.writeFileSync("texts.FILE_UPLOADED_FAIL.txt", err.toString());
-    return res.status(STATUS_CODE.CONFLICT).json({
-      status: STATUS_CODE.CONFLICT,
-      message: TEXTS.fileUploadingFail,
-    });
+    console.error("Error during S3 upload:", err);
+    if (retries > 0) {
+      console.log(`Retrying upload... (${3 - retries + 1})`);
+      return await uploadFile(filePath, bucketName, fileName, res, retries - 1);
+    }
+    if (res) {
+      return res.status(STATUS_CODE.CONFLICT).json({
+        status: STATUS_CODE.CONFLICT,
+        message: TEXTS.fileUploadingFail,
+      });
+    }
   }
 };
 

@@ -9,8 +9,9 @@ const router = express.Router();
 router.post('/upload', upload.single("file"), async (req, res, next) => {
     try {
         let file = {};
+        let oldFile = req.body.oldFile;
         if (req?.file) {
-            file = await handleFileUpload(req?.file);
+            file = await handleFileUpload(req?.file, oldFile, res);
         }
         responseFormatter(res, STATUS_CODE.SUCCESS, { url: file }, TEXTS.fileUploaded);
     } catch (err) {
