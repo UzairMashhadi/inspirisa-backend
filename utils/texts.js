@@ -87,7 +87,8 @@ module.exports = {
     passwordChangedSuccessfully: 'Your password has been successfully changed.',
     invalidCurrentPassword: 'The current password is incorrect.',
     passwordSameAsOld: 'The new password cannot be the same as the old password.',
-    userRestoredBack: 'User restored back!'
+    userRestoredBack: 'User restored back!',
+    verificationEmailSentAgain: 'Your email is not verified. A new verification email has been sent to your inbox.'
   },
 
   ROLES: {
