@@ -1,5 +1,7 @@
-const { responseFormatter } = require('../utils/helper');
+const crypto = require('crypto');
+const { responseFormatter, generateEmailHtml } = require('../utils/helper');
 const { STATUS_CODE, TEXTS } = require('../utils/texts');
+const { sendEmail } = require('../services/emailService');
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -16,7 +18,22 @@ const isEmailVerified = async (req, res, next) => {
             return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, TEXTS.userNotFound);
         }
         if (!user.isEmailVerified) {
-            return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, TEXTS.emailNotVerified);
+            const verificationToken = crypto.randomBytes(32).toString('hex');
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { verificationToken }
+            });
+
+            const verificationLink = `${process.env.BASEURL}verify-email?token=${verificationToken}`;
+            const mailOptions = {
+                to: email,
+                subject: 'Email Verification',
+                html: generateEmailHtml(`<p>Click <a href="${verificationLink}">here</a> to verify your email address.</p>`)
+            };
+
+            await sendEmail(mailOptions.to, mailOptions.subject, mailOptions.html);
+
+            return responseFormatter(res, STATUS_CODE.UNAUTHORIZED, {}, TEXTS.verificationEmailSentAgain);
         }
 
         next();
